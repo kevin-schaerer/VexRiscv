@@ -1039,7 +1039,7 @@ class CsrPlugin(val config: CsrPluginConfig) extends Plugin[VexRiscv] with Excep
           if(userGen) is(0){ mstatus.MPP := 0 }
         }
         switch(writeData()(3)){
-          if(!mstatush.MDT) is(1){ mstatus.MIE := True }
+          if(mstatush.MDT == False) is(1){ mstatus.MIE := True }
           is(0){ mstatus.MIE := False }
         }
       }
