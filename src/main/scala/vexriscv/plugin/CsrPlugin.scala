@@ -1038,21 +1038,19 @@ class CsrPlugin(val config: CsrPluginConfig) extends Plugin[VexRiscv] with Excep
           if(supervisorGen) is(1){ mstatus.MPP := 1 }
           if(userGen) is(0){ mstatus.MPP := 0 }
         }
-        switch(writeData()(3)){
-          if(mstatush.MDT == False) is(1){ mstatus.MIE := True }
-          is(0){ mstatus.MIE := False }
+        if(writeData()(3)){
+          if(mstatush.MDT == False) { mstatus.MIE := True }
         }
+        else { mstatus.MIE := False }
       }
 
       r(CSR.MSTATUSH, 10 -> mstatush.MDT)
       onWrite(CSR.MSTATUSH){
-        switch(writeData()(10)){
-          is(1){ 
+        if(writeData()(10)){
             mstatush.MDT := True
             mstatus.MIE := False
-          }
-          is(0){ mstatush.MDT := False }
         }
+        else { mstatush.MDT := False }
       }
 
       mtvecAccess(CSR.MTVEC, 2 -> mtvec.base)
