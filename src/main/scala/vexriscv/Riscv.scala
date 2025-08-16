@@ -200,6 +200,7 @@ object Riscv{
     def MIDELEG   = 0x303 // MRW Machine interrupt delegation register.
     def MIE       = 0x304 // MRW Machine interrupt-enable register.
     def MTVEC     = 0x305 // MRW Machine trap-handler base address. Machine Trap Handling
+    def MSTATUSH  = 0x310 // MRW Additional machine status register.
     def MSCRATCH  = 0x340 // MRW Scratch register for machine trap handlers.
     def MEPC      = 0x341 // MRW Machine exception program counter.
     def MCAUSE    = 0x342 // MRW Machine trap cause.

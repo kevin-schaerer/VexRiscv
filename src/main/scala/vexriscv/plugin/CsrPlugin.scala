@@ -984,6 +984,10 @@ class CsrPlugin(val config: CsrPluginConfig) extends Plugin[VexRiscv] with Excep
         val MIE, MPIE = RegInit(False)
         val MPP = RegInit(U"11")
       }
+      val mstatush = new Area{
+        val SBE, MBE, GVA, MPV = RegInit(False)
+        val MDT = RegInit(True)
+      }
       val mip = new Area{
         val MEIP = RegNext(externalInterrupt)
         val MTIP = RegNext(timerInterrupt)
@@ -1021,17 +1025,33 @@ class CsrPlugin(val config: CsrPluginConfig) extends Plugin[VexRiscv] with Excep
       }
 
       //Machine CSR
-      READ_WRITE(CSR.MSTATUS, 7 -> mstatus.MPIE, 3 -> mstatus.MIE)
+      READ_WRITE(CSR.MSTATUS, 7 -> mstatus.MPIE)
+      READ_WRITE(CSR.MSTATUSH, 7 -> mstatush.MPV, 6 -> mstatush.GVA, 5 -> mstatush.MBE, 4 -> mstatush.SBE)
       READ_ONLY(CSR.MIP, 11 -> mip.MEIP, 7 -> mip.MTIP)
       READ_WRITE(CSR.MIP, 3 -> mip.MSIP)
       READ_WRITE(CSR.MIE, 11 -> mie.MEIE, 7 -> mie.MTIE, 3 -> mie.MSIE)
 
-      r(CSR.MSTATUS, 11 -> mstatus.MPP)
+      r(CSR.MSTATUS, 11 -> mstatus.MPP, 3 -> mstatus.MIE)
       onWrite(CSR.MSTATUS){
         switch(writeData()(12 downto 11)){
           is(3){ mstatus.MPP := 3 }
           if(supervisorGen) is(1){ mstatus.MPP := 1 }
           if(userGen) is(0){ mstatus.MPP := 0 }
+        }
+        switch(writeData()(3)){
+          if(!mstatush.MDT) is(1){ mstatus.MIE := True }
+          is(0){ mstatus.MIE := False }
+        }
+      }
+
+      r(CSR.MSTATUSH, 10 -> mstatush.MDT)
+      onWrite(CSR.MSTATUSH){
+        switch(writeData()(10)){
+          is(1){ 
+            mstatush.MDT := True
+            mstatus.MIE := False
+          }
+          is(0){ mstatush.MDT := False }
         }
       }
 
@@ -1414,6 +1434,8 @@ class CsrPlugin(val config: CsrPluginConfig) extends Plugin[VexRiscv] with Excep
               mstatus.MIE  := False
               mstatus.MPIE := mstatus.MIE
               mstatus.MPP  := privilege
+              mstatush.MPV  := False
+              mstatush.MDT  := True
               mcause.interrupt := !hadException
               mcause.exceptionCode := trapCause
               mepc := mepcCaptureStage.input(PC)
@@ -1462,6 +1484,8 @@ class CsrPlugin(val config: CsrPluginConfig) extends Plugin[VexRiscv] with Excep
               mstatus.MPP := U"00"
               mstatus.MIE := mstatus.MPIE
               mstatus.MPIE := True
+              mstatush.MPV := False
+              mstatush.MDT := False
               jumpInterface.payload := mepc
               if(privilegeGen) {
                 privilegeReg := mstatus.MPP
